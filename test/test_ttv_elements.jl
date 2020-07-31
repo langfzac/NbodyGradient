@@ -19,7 +19,7 @@ h  = 0.04
 tmax = 10.0
 
 # Read in initial conditions:
-elements = readdlm("elements.txt",',')
+elements = readdlm("elements.txt",',')[1:n,:]
 elements[:,3] .-= 7300.0
 # Make masses of planets bigger
 #elements[2,1] *= 10.0

@@ -8,6 +8,8 @@ module NbodyGradient
 using LinearAlgebra, DelimitedFiles
 using FileIO, JLD2
 
+using StaticArrays
+
 # Constants used by most functions
 # Need to clean this up
 const NDIM = 3

@@ -13,7 +13,7 @@ h  = 0.05
 tmax = 600.0
 dlnq = big(1e-15)
 
-elements = readdlm("elements.txt",',')
+elements = readdlm("elements.txt",',')[1:n,:]
 elements[2,1] = 1.0
 elements[3,1] = 1.0
 

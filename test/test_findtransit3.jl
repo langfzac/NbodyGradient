@@ -22,7 +22,7 @@ h  = 0.05
 tmax = 10.0
 
 # Read in initial conditions:
-elements = readdlm("elements.txt",',')
+elements = readdlm("elements.txt",',')[1:n,:]
 # Increase masses for debugging:
 elements[2,1] *= 10.0
 elements[3,1] *= 10.0

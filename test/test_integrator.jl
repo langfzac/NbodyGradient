@@ -4,7 +4,7 @@
     H = [3,1,1]
     n = 3 
     t0 = 7257.93115525
-    elements = readdlm("elements.txt",',')
+    elements = readdlm("elements.txt",',')[1:n,:]
     # Increase mass of inner planets:
     elements[2,1] *= 100.0
     elements[3,1] *= 100.0

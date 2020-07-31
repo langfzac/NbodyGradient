@@ -45,6 +45,7 @@ function kepcalc(init::ElementsIC{T}) where T <: AbstractFloat
     rdotkepler = zeros(T,init.nbody,NDIM)
     if init.der
         jac_kepler = zeros(T,6*init.nbody,7*init.nbody)
+        jac_kepler = SizedMatrix{size(jac_kepler)...}(jac_kepler)
     end
     # Compute Kepler's problem
     for i in 1:init.nbody
@@ -102,15 +103,15 @@ Computes derivatives of A-matrix, position, and velocity with respect to the mas
 # Outputs
 - `jac_init::Array{<:Real,2}`: Derivatives of the A-matrix and cartesian positions and velocities with respect to the masses of each object.
 """
-function d_dm(init::ElementsIC{T},rkepler::Array{T,2},rdotkepler::Array{T,2},jac_kepler::Array{T,2}) where T <: AbstractFloat
+function d_dm(init::ElementsIC{T},rkepler,rdotkepler,jac_kepler) where T <: AbstractFloat
 
     N = init.nbody
     m = init.m
     ϵ = init.ϵ
-    jac_init = zeros(T,7*N,7*N)
-    dAdm = zeros(T,N,N,N)
-    dxdm = zeros(T,NDIM,N)
-    dvdm = zeros(T,NDIM,N)
+    jac_init = SizedMatrix{7*N,7*N}(zeros(T,7*N,7*N))
+    dAdm = SizedArray{Tuple{N,N,N}}(zeros(T,N,N,N))
+    dxdm = SizedMatrix{NDIM,N}(zeros(T,NDIM,N))
+    dvdm = SizedMatrix{NDIM,N}(zeros(T,NDIM,N))
 
     # Differentiate A matrix wrt the mass of each body
     for k in 1:N, i in 1:N, j in 1:N
@@ -158,8 +159,8 @@ Creates the A matrix presented in Hamers & Portegies Zwart 2016 (HPZ16).
 # Outputs
 - `A::Array{<:Real,2}`: A matrix.
 """
-function amatrix(ϵ::Array{T,2},m::Array{T,1}) where T<:AbstractFloat
-    A = zeros(T,size(ϵ)) # Empty A matrix
+function amatrix(ϵ,m)
+    A = SizedMatrix{size(ϵ)...}(zeros(eltype(ϵ),size(ϵ))) # Empty A matrix
     N = length(ϵ[:,1]) # Number of bodies in system
 
     for i in 1:N, j in 1:N
@@ -185,8 +186,7 @@ Sums masses in current Keplerian.
 # Outputs
 - `m<:Real`: Sum of the masses.
 """
-function Σm(masses::Array{T,1},i::Integer,j::Integer,
-            ϵ::Array{T,2}) where T <: AbstractFloat
+function Σm(masses,i::Integer,j::Integer,ϵ)
     m = 0.0
     for l in 1:length(masses)
         m += masses[l]*δ_(ϵ[i,j],ϵ[i,l])
@@ -205,11 +205,4 @@ An NxN Kronecker Delta function.
 # Outputs
 - `::Bool`
 """
-function δ_(i::T,j::T) where T <: Real
-    if i == j
-        return 1.0
-    else
-        return 0.0
-    end
-end
-
+δ_(i,j) = i==j ? 1.0 : 0.0

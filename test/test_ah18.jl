@@ -22,7 +22,7 @@ dlnq = big(1e-20)
 nstep = 100
 #nstep = 1
 
-elements = readdlm("elements.txt",',')
+elements = readdlm("elements.txt",',')[1:n,:]
 # Increase mass of inner planets:
 elements[2,1] *= 100.
 elements[3,1] *= 100.

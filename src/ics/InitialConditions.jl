@@ -1,3 +1,5 @@
+import StaticArrays: StaticArrayLike
+
 abstract type AbstractInitialConditions end
 """
 
@@ -42,31 +44,33 @@ abstract type InitialConditions{T} end
 
 Holds relevant initial conditions arrays. Uses orbital elements.
 """
-struct ElementsIC{T<:AbstractFloat,V<:Vector{T},M<:Matrix{T}} <: InitialConditions{T}
-    elements::M
-    H::Vector{Int64}
-    ϵ::M
-    amat::M
+struct ElementsIC{T<:AbstractFloat} <: InitialConditions{T}
+    elements::StaticArrayLike{T}
+    H::StaticArrayLike{Int64}
+    ϵ::StaticArrayLike{T}
+    amat::StaticArrayLike{T}
     nbody::Int64
-    m::V
+    m::StaticArrayLike{T}
     t0::T
     der::Bool
 
-    function ElementsIC(elems::Union{String,Array{T,2}},H::Union{Array{Int64,1},Int64},t0::T;der::Bool=true) where T <: AbstractFloat
+    function ElementsIC(elems::Union{String,Matrix{T},StaticArrayLike{T}},H::Union{Array{Int64,1},Int64},t0::T;der::Bool=true) where T <: AbstractFloat
         # Check if only number of bodies was passed. Assumes fully nested.
-        if typeof(H) == Int64; H::Vector{Int64} = [H,ones(H-1)...]; end
-        ϵ = convert(Array{T},hierarchy(H))
-        if typeof(elems) == String
-            elements = convert(Array{T},readdlm(elems,',',comments=true))
-        else
-            elements = elems
-        end
-        nbody = H[1]
-        m = elements[1:nbody,1]
+        typeof(H) == Int64 ? H = @SVector([H,ones(H-1)...]) : H = SVector{size(H)...}(H)
+        n = H[1]
+        ϵ = SizedMatrix{n,n,T}(hierarchy(H))
+        elements = change_elems_type(elems,n)
+        m = SizedVector{n}(elements[1:n,1])
         amat = amatrix(ϵ,m)
-        return new{T,Vector{T},Matrix{T}}(elements,H,ϵ,amat,nbody,m,t0,der);
+        return new{T}(elements,H,ϵ,amat,n,m,t0,der)
     end
 end
+
+    
+# Deals with different elements types in ElementsIC
+function change_elems_type(elems::String,n); return SizedMatrix{n,7}(readdlm(elems,',',comments=true)); end
+function change_elems_type(elems::Matrix,n); return SizedMatrix{n,7}(elems); end
+function change_elems_type(elems::StaticArrayLike,n); return elems; end
 
 """
 

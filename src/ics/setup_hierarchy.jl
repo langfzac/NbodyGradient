@@ -6,7 +6,7 @@
 # of the form "test.txt" (included in "test/" directory), or in a 2d array of
 # the form file = [x ; "x,y,z,..."] where x,y,z are Int64
 ################################################################################
-function hierarchy(ic_vec::Array{Int64,1})
+function hierarchy(ic_vec)
 
     # Separates the initial array into variables
     nbody = ic_vec[1]

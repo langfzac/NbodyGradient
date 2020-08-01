@@ -4,7 +4,7 @@
 
 Carries out AH18 mapping with compensated summation.
 """
-function ah18!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,pair::Array{Bool,2}) where {T <: Real}
+function ah18!(x,v,xerror,verror,h::T,m,n::Int64,pair) where {T <: Real}
     h2 = 0.5*h
     drift!(x,v,xerror,verror,h2,n)
     kickfast!(x,v,xerror,verror,h/6,m,n,pair)
@@ -33,7 +33,7 @@ end
 
 Drifts all particles with compensated summation.
 """
-function drift!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,n::Int64) where {T <: Real}
+function drift!(x,v,xerror,verror,h::T,n::Int64) where {T <: Real}
     @inbounds for i=1:n, j=1:NDIM
         x[j,i],xerror[j,i] = comp_sum(x[j,i],xerror[j,i],h*v[j,i])
     end
@@ -44,7 +44,7 @@ end
 
 Computes "fast" kicks for pairs of bodies in lieu of -drift+Kepler with compensated summation
 """
-function kickfast!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,pair::Array{Bool,2}) where {T <: Real}
+function kickfast!(x,v,xerror,verror,h::T,m,n::Int64,pair) where {T <: Real}
     rij = zeros(T,3)
     @inbounds for i=1:n-1
         for j = i+1:n
@@ -70,7 +70,7 @@ end
 
 Computes correction for pairs which are kicked.
 """
-function phic!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,pair::Array{Bool,2}) where {T <: Real}
+function phic!(x,v,xerror,verror,h::T,m,n::Int64,pair) where {T <: Real}
     a = zeros(T,3,n)
     rij = zeros(T,3)
     aij = zeros(T,3)
@@ -116,7 +116,7 @@ end
 
 Computes the 4th-order correction with compensated summation.
 """
-function phisalpha!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},alpha::T,n::Int64,pair::Array{Bool,2}) where {T <: Real}
+function phisalpha!(x,v,xerror,verror,h::T,m,alpha::T,n::Int64,pair) where {T <: Real}
     a = zeros(T,3,n)
     rij = zeros(T,3)
     aij = zeros(T,3)
@@ -168,7 +168,7 @@ end
 
 Carries out a Kepler step and reverse drift for bodies i & j with compensated summation.
 """
-function kepler_driftij_gamma!(m::Array{T,1},x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},i::Int64,j::Int64,h::T,drift_first::Bool) where {T <: Real}
+function kepler_driftij_gamma!(m,x,v,xerror,verror,i::Int64,j::Int64,h::T,drift_first::Bool) where {T <: Real}
     x0 = zeros(T,NDIM) # x0 = positions of body i relative to j
     v0 = zeros(T,NDIM) # v0 = velocities of body i relative to j
     @inbounds for k=1:NDIM
@@ -203,7 +203,7 @@ end
 
 Computes Jacobian of delx and delv with respect to x0, v0, k, and h.
 """
-function jac_delxv_gamma!(x0::Array{T,1},v0::Array{T,1},k::T,h::T,drift_first::Bool;grad::Bool=false,auto::Bool=false,dlnq::T=convert(T,0.0),debug=false) where {T <: Real}
+function jac_delxv_gamma!(x0,v0,k::T,h::T,drift_first::Bool;grad::Bool=false,auto::Bool=false,dlnq::T=convert(T,0.0),debug=false) where {T <: Real}
     # Using autodiff, computes Jacobian of delx & delv with respect to x0, v0, k & h.
 
     # Autodiff requires a single-vector input, so create an array to hold the independent variables:

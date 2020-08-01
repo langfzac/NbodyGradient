@@ -3,17 +3,18 @@
 
 The AH18 integrator top level function. Carries out the AH18 mapping and computes the Jacobian.
 """
-function ah18!(s::State{T},d::Jacobian{T},h::T,pair::Matrix{Bool}) where T<:AbstractFloat
+function ah18!(s::State{T},d::Jacobian{T},h::T,pair) where T<:AbstractFloat
     zilch = zero(T); uno = one(T); half = convert(T,0.5); two = convert(T,2.0); h2 = half*h; sevn = 7*s.n
 
     drift!(s.x,s.v,s.xerror,s.verror,h2,s.n,s.jac_step,s.jac_error)
     kickfast!(s.x,s.v,s.xerror,s.verror,h/6,s.m,s.n,d.jac_kick,d.dqdt_kick,pair)
     # Multiply Jacobian from kick step:
-    if T == BigFloat
+    #=if T == BigFloat
         d.jac_copy .= *(d.jac_kick,s.jac_step)
     else
         BLAS.gemm!('N','N',uno,d.jac_kick,s.jac_step,zilch,d.jac_copy)
-    end
+    end=#
+    d.jac_copy .= d.jac_kick * s.jac_step
     # Add back in the identity portion of the Jacobian with compensated summation:
     comp_sum_matrix!(s.jac_step,s.jac_error,d.jac_copy)
     indi = 0; indj = 0
@@ -33,11 +34,12 @@ function ah18!(s::State{T},d::Jacobian{T},h::T,pair::Matrix{Bool}) where T<:Abst
                     d.jac_err1[7+k1,k2] = s.jac_error[indj+k1,k2]
                 end
                 # Carry out multiplication on the i/j components of matrix:
-                if T == BigFloat
+                #=if T == BigFloat
                     d.jac_tmp2 .= *(d.jac_ij,d.jac_tmp1)
                 else
                     BLAS.gemm!('N','N',uno,d.jac_ij,d.jac_tmp1,zilch,d.jac_tmp2)
-                end
+                end=#
+                d.jac_tmp2 .= *(d.jac_ij,d.jac_tmp1)
                 # Add back in the Jacobian with compensated summation:
                 comp_sum_matrix!(d.jac_tmp1,d.jac_err1,d.jac_tmp2)
                 # Copy back to the Jacobian:
@@ -54,11 +56,12 @@ function ah18!(s::State{T},d::Jacobian{T},h::T,pair::Matrix{Bool}) where T<:Abst
     end
     phic!(s.x,s.v,s.xerror,s.verror,h,s.m,s.n,d.jac_phi,d.dqdt_phi,pair)
     phisalpha!(s.x,s.v,s.xerror,s.verror,h,s.m,two,s.n,d.jac_phi,d.dqdt_phi,pair) # 10%
-    if T == BigFloat
+    #=if T == BigFloat
         d.jac_copy .= *(d.jac_phi,s.jac_step)
     else
         BLAS.gemm!('N','N',uno,d.jac_phi,s.jac_step,zilch,d.jac_copy)
-    end
+    end=#
+    d.jac_copy .= *(d.jac_phi,s.jac_step)
     # Add back in the identity portion of the Jacobian with compensated summation:
     comp_sum_matrix!(s.jac_step,s.jac_error,d.jac_copy)
     indi=0; indj=0
@@ -79,11 +82,12 @@ function ah18!(s::State{T},d::Jacobian{T},h::T,pair::Matrix{Bool}) where T<:Abst
                     d.jac_err1[7+k1,k2] = s.jac_error[indj+k1,k2]
                 end
                 # Carry out multiplication on the i/j components of matrix:
-                if T == BigFloat
+                #=if T == BigFloat
                     d.jac_tmp2 .= *(d.jac_ij,d.jac_tmp1)
                 else
                     BLAS.gemm!('N','N',uno,d.jac_ij,d.jac_tmp1,zilch,d.jac_tmp2)
-                end
+                end=#
+                d.jac_tmp2 .= *(d.jac_ij,d.jac_tmp1)
                 # Add back in the Jacobian with compensated summation:
                 comp_sum_matrix!(d.jac_tmp1,d.jac_err1,d.jac_tmp2)
                 # Copy back to the Jacobian:
@@ -101,11 +105,12 @@ function ah18!(s::State{T},d::Jacobian{T},h::T,pair::Matrix{Bool}) where T<:Abst
     #kickfast!(x,v,h2,m,n,jac_kick,dqdt_kick,pair)
     kickfast!(s.x,s.v,s.xerror,s.verror,h/6,s.m,s.n,d.jac_kick,d.dqdt_kick,pair)
     # Multiply Jacobian from kick step:
-    if T == BigFloat
+    #=if T == BigFloat
         d.jac_copy .= *(d.jac_kick,s.jac_step)
     else
         BLAS.gemm!('N','N',uno,d.jac_kick,s.jac_step,zilch,d.jac_copy)
-    end
+    end=#
+    d.jac_copy .= *(d.jac_kick,s.jac_step)
     # Add back in the identity portion of the Jacobian with compensated summation:
     comp_sum_matrix!(s.jac_step,s.jac_error,d.jac_copy)
     # Edit this routine to do compensated summation for Jacobian [x]
@@ -117,7 +122,7 @@ end
 
 Carries out the AH18 mapping & computes the derivative with respect to time step, h.
 """
-function ah18!(s::State{T},d::dTime{T},h::T,pair::Matrix{Bool}) where T<:AbstractFloat
+function ah18!(s::State{T},d::dTime{T},h::T,pair) where T<:AbstractFloat
     # [Currently this routine is not giving the correct dqdt values. -EA 8/12/2019]
     n = s.n
     zilch = zero(T); uno = one(T); half = convert(T,0.5); two = convert(T,2.0); h2 = half*h; sevn = 7*n

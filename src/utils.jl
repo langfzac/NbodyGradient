@@ -32,7 +32,7 @@ Kahan (1965) compenstated summation for `::Matrix{<:Real}`.
 - `addend::Matrix{<:Real}` : New value to be added to the sum.
 ...
 """
-function comp_sum_matrix!(sum_value::Array{T,2},sum_error::Array{T,2},addend::Array{T,2}) where {T <: Real}
+function comp_sum_matrix!(sum_value::AbstractMatrix{T},sum_error::AbstractMatrix{T},addend::AbstractMatrix{T}) where {T <: Real}
     @inbounds for i in eachindex(sum_value)
         sum_error[i] += addend[i]
         tmp = sum_value[i] + sum_error[i]

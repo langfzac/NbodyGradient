@@ -4,7 +4,7 @@
 
 The AH18 integrator top level function. Carries out the AH18 mapping and computes the Jacobian.
 """
-function ah18!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,jac_step::Array{T,2},jac_error::Array{T,2},pair::Array{Bool,2}) where {T <: Real}
+function ah18!(x,v,xerror,verror,h::T,m,n,jac_step,jac_error,pair) where T <: AbstractFloat
     zilch = zero(T); uno = one(T); half = convert(T,0.5); two = convert(T,2.0)
     h2 = half*h; sevn = 7*n
 
@@ -133,7 +133,7 @@ end
 
 Carries out the AH18 mapping & computes the derivative with respect to time step, h.
 """
-function ah18!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,dqdt::Array{T,1},pair::Array{Bool,2}) where {T <: Real}
+function ah18!(x,v,xerror,verror,h::T,m,n::Int64,dqdt,pair) where {T <: Real}
     # [Currently this routine is not giving the correct dqdt values. -EA 8/12/2019]
     zilch = zero(T); uno = one(T); half = convert(T,0.5); two = convert(T,2.0)
     h2 = half*h
@@ -251,7 +251,7 @@ end
 
 AH18 drift step. Drifts all particles with compensated summation. (with Jacobian)
 """
-function drift!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,n::Int64,jac_step::Array{T,2},jac_error::Array{T,2}) where {T <: Real}
+function drift!(x,v,xerror,verror,h::T,n::Int64,jac_step,jac_error) where {T <: Real}
     indi = 0
     @inbounds for i=1:n
         indi = (i-1)*7
@@ -270,7 +270,7 @@ end
 
 AH18 kick step. Computes "fast" kicks for pairs of bodies (in lieu of -drift+Kepler). Include Jacobian and compensated summation.
 """
-function kickfast!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,jac_step::Array{T,2},dqdt_kick::Array{T,1},pair::Array{Bool,2}) where {T <: Real}
+function kickfast!(x,v,xerror,verror,h::T,m,n::Int64,jac_step,dqdt_kick,pair) where {T <: Real}
     rij = zeros(T,3)
     # Getting rid of identity since we will add that back in in calling routines:
     fill!(jac_step,zero(T))
@@ -327,7 +327,7 @@ end
 
 Computes correction for pairs which are kicked, with Jacobian, dq/dt, and compensated summation.
 """
-function phic!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},n::Int64,jac_step::Array{T,2},dqdt_phi::Array{T,1},pair::Array{Bool,2}) where {T <: Real}
+function phic!(x,v,xerror,verror,h::T,m,n::Int64,jac_step,dqdt_phi,pair) where {T <: AbstractFloat}
     a = zeros(T,3,n)
     rij = zeros(T,3)
     aij = zeros(T,3)
@@ -494,7 +494,7 @@ end
 
 Computes the 4th-order correction, with Jacobian, dq/dt, and compensated summation.
 """
-function phisalpha!(x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},h::T,m::Array{T,1},alpha::T,n::Int64,jac_step::Array{T,2},dqdt_phi::Array{T,1},pair::Array{Bool,2}) where {T <: Real}
+function phisalpha!(x,v,xerror,verror,h::T,m,alpha::T,n::Int64,jac_step,dqdt_phi,pair) where {T <: Real}
     a = zeros(T,3,n)
     dadq = zeros(T,3,n,4,n)  # There is no velocity dependence
     dotdadq = zeros(T,4,n)  # There is no velocity dependence
@@ -639,7 +639,7 @@ end
 
 Carries out a Kepler step and reverse drift for bodies i & j, and computes Jacobian. Uses new version of the code with gamma in favor of s, and full auto-diff of Kepler step.
 """
-function kepler_driftij_gamma!(m::Array{T,1},x::Array{T,2},v::Array{T,2},xerror::Array{T,2},verror::Array{T,2},i::Int64,j::Int64,h::T,jac_ij::Array{T,2},dqdt::Array{T,1},drift_first::Bool) where {T <: Real}
+function kepler_driftij_gamma!(m,x,v,xerror,verror,i::Int64,j::Int64,h::T,jac_ij,dqdt,drift_first::Bool) where {T <: Real}
     # Initial state:
     x0 = zeros(T,NDIM) # x0 = positions of body i relative to j
     v0 = zeros(T,NDIM) # v0 = velocities of body i relative to j
@@ -717,7 +717,7 @@ end
 
 Computes analytic Jacobian of delx and delv with respect to x0, v0, k and h.
 """
-function jac_delxv_gamma!(x0::Array{T,1},v0::Array{T,1},k::T,h::T,drift_first::Bool,delxv::Array{T,1},delxv_jac::Array{T,2},jac_mass::Array{T,1},debug::Bool) where {T <: Real}
+function jac_delxv_gamma!(x0,v0,k::T,h::T,drift_first::Bool,delxv,delxv_jac,jac_mass,debug::Bool) where {T <: Real}
     # Compute r0:
     drift_first ?  r0 = norm(x0-h*v0) : r0 = norm(x0)
     # And its inverse:
@@ -831,7 +831,7 @@ end
 
 Computes the gradient analytically.  
 """
-function compute_jacobian_gamma!(gamma::T,g0::T,g1::T,g2::T,g3::T,h1::T,h2::T,dfdt::T,fm1::T,gmh::T,dgdtm1::T,r0::T,r::T,r0inv::T,rinv::T,k::T,h::T,beta::T,betainv::T,eta::T,sqb::T,zeta::T,x0::Array{T,1},v0::Array{T,1},delxv_jac::Array{T,2},jac_mass::Array{T,1},drift_first::Bool,debug::Bool) where {T <: Real}
+function compute_jacobian_gamma!(gamma::T,g0::T,g1::T,g2::T,g3::T,h1::T,h2::T,dfdt::T,fm1::T,gmh::T,dgdtm1::T,r0::T,r::T,r0inv::T,rinv::T,k::T,h::T,beta::T,betainv::T,eta::T,sqb::T,zeta::T,x0,v0,delxv_jac,jac_mass,drift_first::Bool,debug::Bool) where {T <: Real}
     # Computes Jacobian:
     if drift_first
         # First, x0 derivatives:

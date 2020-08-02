@@ -11,28 +11,35 @@ struct Elements{T<:AbstractFloat} <: AbstractInitialConditions
     t0::T
     ecosϖ::T
     esinϖ::T
-    i::T
+    I::T
     Ω::T
+    e::T
+    ϖ::T
+end
 
-    Elements(m::T,P::T,t0::T,ecosϖ::T,esinϖ::T,i::T,Ω::T) where T<:Real = new{T}(m,P,t0,ecosϖ,esinϖ,i,Ω)
+function Elements(;m=0.0,P=0.0,t0=0.0,e=0.0,ϖ=0.0,I=0.0,Ω=0.0)
+    esinϖ,ecosϖ = e.*sincos(ϖ)
+    return Elements(m,P,t0,ecosϖ,esinϖ,I,Ω,e,ϖ)
 end
 
 function Base.show(io::IO, ::MIME"text/plain" ,elems::Elements{T}) where T <: Real
-    names = ["m","P","t0","ecosϖ","esinϖ","i","Ω"]
-    vals = [elems.m,elems.P,elems.t0,elems.ecosϖ,elems.esinϖ,elems.i,elems.Ω]
+    names = ["m","P","t0","ecosϖ","esinϖ","I","Ω","e","ϖ"]
+    vals = [elems.m,elems.P,elems.t0,elems.ecosϖ,elems.esinϖ,elems.I,
+            elems.Ω,elems.e,elems.ϖ]
     println(io, "Elements{$T}")
     println.(Ref(io), names,": ",vals)
 end
 
-# Fix this later...
-#="""Allow alternate specification"""
+#= Fix this later...
+"""Allow alternate specification"""
 function Elements(;m::T=0.0,P::T=0.0,t0::T=0.0,e::T=0.0,ϖ::T=0.0,i::T=0.0,Ω::T=0.0) where T<:Real
     esinϖ,ecosϖ = e .* sincos(ϖ)
     return new{T}(m,P,t0,ecosϖ,esinϖ,i,Ω)
-end=#
+end
 
 """Allow keywargs"""
 Elements(;m::T=0.0,P::T=0.0,t0::T=0.0,ecosϖ::T=0.0,esinϖ::T=0.0,i::T=0.0,Ω::T=0.0) where T<:Real = Elements(m,P,t0,ecosϖ,esinϖ,i,Ω)
+=#
 
 #= This overwrites the main constructor... Maybe not needed. I don't see folks using integers here.
 """Promotion to (atleast) floats"""
@@ -86,9 +93,8 @@ function ElementsIC(t0::T,elems::Elements{T}...;H::Vector{Int64}) where T <: Abs
             bodies[key] = elems[i]
         end
         key = sort(collect(keys(bodies)))
-        field = fieldnames(Elements)
-        elements = zeros(length(bodies),7)
-        for i in 1:length(bodies), elm in enumerate(fieldnames(Elements))
+        fields = setdiff(fieldnames(Elements),(:e,:ϖ))
+        for i in 1:length(bodies), elm in enumerate(fields)
             elements[i,elm[1]] = getfield(bodies[key[i]],elm[2])
         end
         return elements

@@ -7,35 +7,35 @@ import NbodyGradient: InitialConditions
 const GNEWT = 39.4845/(365.242 * 365.242) # AU^3 Msol^-1 Day^-2
 
 # h vector
-function hvec(x::V,v::V) where V <: Vector{<:Real}
+function hvec(x,v)
     hx,hy,hz = cross(x,v)
     hz >= 0.0 ? hy *= -1 : hx *= -1
     return [hx,hy,hz]
 end
 
 # R dot
-Rdotmag(R::T,V::T,x::Vector{T},v::Vector{T},h::T) where T<:AbstractFloat = sign(dot(x,v))*sqrt(V^2 - (h/R)^2)
+Rdotmag(R,V,x,v,h) = sign(dot(x,v))*sqrt(V^2 - (h/R)^2)
 
 ## Elements ##
 
 # Semi-major axis
-calc_a(R::T,V::T,Gm::T) where T<:AbstractFloat = 1.0/((2.0/R) - (V*V)/(Gm))
+calc_a(R,V,Gm) = 1.0/((2.0/R) - (V*V)/(Gm))
 
 # Eccentricity
-calc_e(h::T,Gm::T,a::T) where T<:AbstractFloat = sqrt(1.0 - (h*h/(Gm*a)))
+calc_e(h,Gm,a) = sqrt(1.0 - (h*h/(Gm*a)))
 
 # Inclination
-calc_I(hz::T,h::T) where T<:AbstractFloat = acos(hz/h)
+calc_I(hz,h) = acos(hz/h)
 
 # Long. of Ascending Node
-function calc_Ω(h::T,hx::T,hy::T,sI::T) where T<:AbstractFloat
+function calc_Ω(h,hx,hy,sI)
     sΩ = hx/(h*sI)
     cΩ = hy/(h*sI) 
     return atan(sΩ,cΩ)
 end
 
 # Long. of Pericenter
-function calc_ϖ(x::Vector{T},R::T,Ṙ::T,Ω::T,I::T,e::T,h::T,a::T) where T<:AbstractFloat
+function calc_ϖ(x,R,Ṙ,Ω,I,e,h,a)
     X,_,Z = x
     sΩ,cΩ = sincos(Ω)
     sI,cI = sincos(I)
@@ -55,13 +55,13 @@ function calc_ϖ(x::Vector{T},R::T,Ṙ::T,Ω::T,I::T,e::T,h::T,a::T) where T<:Ab
 end
 
 # Time of pericenter passage
-function calc_t0(R::T,a::T,e::T,Gm::T,t::T) where T<:AbstractFloat
+function calc_t0(R,a,e,Gm,t)
     E = acos((1.0 - (R/a)) / e)
     return t - (E - e*sin(E))/sqrt(Gm/(a*a*a))
 end
 
 # Period
-calc_P(a::T,Gm::T) where T<:AbstractFloat = (2.0*π)*sqrt(a*a*a/Gm)
+calc_P(a,Gm) = (2.0*π)*sqrt(a*a*a/Gm)
 
 # Get relative hierarchy positions 
 function calc_X(s::State{T},ic::InitialConditions{T}) where T<:AbstractFloat
@@ -76,7 +76,7 @@ function calc_X(s::State{T},ic::InitialConditions{T}) where T<:AbstractFloat
     return X,V
 end
 
-function gmass(m::Vector{T}) where T<:AbstractFloat
+function gmass(m)
     N = length(m)
     M = zeros(N - 1)
     for i in 1:N-1
